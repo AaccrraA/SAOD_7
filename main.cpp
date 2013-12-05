@@ -5,24 +5,30 @@
 #include <fstream>
 using namespace std;
 
+struct Vertex {
+	int num;
+	bool isPainted;
+
+	Vertex() : num(0), isPainted(false) {}
+};
 struct Edge {
-	int B; // begin
-	int E; // end
+	int B; // begin ind
+	int E; // end ind
 };
 
 struct Graph {
-	// Incedence Matrix
-    vector<vector<int>> M;
-	vector<int> vertexSet;
-	vector<Edge> edgeSet;
+public:
+    vector<vector<int>> M; // Матрица инцидентности
+	vector<Vertex> vertexSet; // Вектор вершин
+	vector<Edge> edgeSet; // Вектор дуг
 
-	// v - кол-во вершин, e - кол-во ребер
+	// Инициализируем граф
 	Graph(int v, int e, int w, int h) {
         M.resize(e);
         vertexSet.resize(v);
 		
 		for (int i = 0; i < v; i++) {
-			vertexSet[i] = i;
+			vertexSet[i].num = i;
 		}
 		
 		for (int i = 0; i < e; i++) {
@@ -61,6 +67,53 @@ struct Graph {
 		}
 	}
 
+	// Распечатываем матрицу инцидентности
+	void PrintMatrix () {
+		cout << "Матрица:" << endl;
+		for (int i = 0; i <= M.size(); i++) {
+			if (i - 1 == -1)
+				cout << "     ";
+			else
+				cout << " " << edgeSet[i-1].B << ">" << edgeSet[i-1].E << " ";
+            for (int j = 0; j < M[0].size(); j++) {
+				if (i - 1 == -1) {
+					cout << vertexSet[j].num << " ";
+					vertexSet[j].num < 10 ? cout << " " : cout << "";
+				}
+				else {
+					M[i-1][j] != 0 ? cout << M[i-1][j] : cout << ".";
+					cout << " ";
+					M[i-1][j] < 10 ? cout << " " : cout << "";
+				}
+            }
+            cout << endl;
+        }
+
+		ofstream fout("Grapgh.gv");
+		
+		fout << "graph {" << endl;
+		for (int i = 0; i < M[i].size(); i++)
+			if (vertexSet[i].isPainted)
+				fout << vertexSet[i].num << "[color=lightblue,style=filled];" << endl;
+		for (int i = 0; i < M.size(); i++)
+			fout << edgeSet[i].B << " -- " << edgeSet[i].E << endl;
+		fout << "}" << endl;
+	}
+
+	void DepthFirstSearch (int num) {
+		vertexSet[num].isPainted = true;
+		for (int i = 0; i < M.size(); i++) {
+			if (vertexSet[edgeSet[i].B].num == num && !vertexSet[edgeSet[i].E].isPainted) {
+				DepthFirstSearch(vertexSet[edgeSet[i].E].num);
+			}
+			else if (vertexSet[edgeSet[i].E].num == num && !vertexSet[edgeSet[i].B].isPainted) {
+				DepthFirstSearch(vertexSet[edgeSet[i].B].num);
+			}
+		}
+	}
+
+private:
+	// Добавляем дугу, если отсутствует
 	bool addEdge(int begin, int end) {
 		Edge tempEdge;
 		tempEdge.B = begin;
@@ -71,41 +124,11 @@ struct Graph {
 			if ((edgeSet[i].B == begin && edgeSet[i].E == end) || (edgeSet[i].E == begin && edgeSet[i].B == end)) {
 				isAdded = false;
 			}
-		}	
+		}
 		if (isAdded) {
 			edgeSet.push_back(tempEdge);
 		}
 		return isAdded;
-	}
-
-	void printMatrix() {
-		cout << "Матрица:" << endl;
-		for (int i = 0; i <= M.size(); i++) {
-			if (i - 1 == -1)
-				cout << "     ";
-			else
-				cout << " " << edgeSet[i-1].B << ">" << edgeSet[i-1].E << " ";
-            for (int j = 0; j < M[0].size(); j++) {
-				if (i - 1 == -1) {
-					cout << vertexSet[j] << " ";
-					vertexSet[j] < 10 ? cout << " " : cout << "";
-				}
-				else {
-					M[i-1][j] != 0 ? cout << M[i-1][j] : cout << ".";
-					cout << " ";
-					M[i-1][j] < 10 ? cout << " " : cout << "";
-				}
-            }
-            cout << endl;
-        }
-		ofstream fout("Grapgh.gv");
-		fout << "graph {" << endl;
-		fout << edgeSet[0].B << "[color=lightblue,style=filled];" << endl;
-		for (int i = 0; i < M.size(); i++) {
-			fout << edgeSet[i].B + 1 << "[color=lightblue,style=filled];" << endl;
-			fout << edgeSet[i].B << " -- " << edgeSet[i].E << endl;
-		}
-		fout << "}" << endl;
 	}
 };
 
@@ -122,7 +145,8 @@ int main() {
 	E = W*(H - 1) + H*(W - 1);
 
 	Graph G(V, E, W, H);
+	G.DepthFirstSearch(4);
+    G.PrintMatrix();
 
-    G.printMatrix();
 	return 0;
 }
